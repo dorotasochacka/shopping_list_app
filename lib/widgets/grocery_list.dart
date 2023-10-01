@@ -1,4 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+import 'package:shopping_list_app/data/categories.dart';
 import 'package:shopping_list_app/models/grocery_item.dart';
 import 'package:shopping_list_app/widgets/new_item.dart';
 
@@ -10,15 +14,75 @@ class GroceryList extends StatefulWidget {
 }
 
 class _GroceryListState extends State<GroceryList> {
-  final List<GroceryItem> _groceryList = [];
+  List<GroceryItem> _groceryList = [];
+  var _isLoading = true;
+  String? _error;
 
-  addNewItem() async {
+  @override
+  void initState() {
+    super.initState();
+    _loadItems();
+  }
+
+  void _loadItems() async {
+    final url = Uri.https(
+      'shopping-app-83a23-default-rtdb.firebaseio.com',
+      'shopping-list.json',
+    );
+
+    try {
+      final response = await http.get(url);
+      response.statusCode;
+
+      if (response.statusCode >= 400) {
+        setState(() {
+          _error = 'Failed to fetch data! Please try again later.';
+        });
+      }
+
+      if (response.body == 'null') {
+        setState(() {
+          _isLoading = false;
+        });
+
+        return;
+      }
+
+      final Map<String, dynamic> listData = json.decode(response.body);
+      final List<GroceryItem> loadedItems = [];
+
+      for (final item in listData.entries) {
+        final category = categories.entries
+            .firstWhere(
+                (element) => element.value.title == item.value['category'])
+            .value;
+
+        loadedItems.add(
+          GroceryItem(
+            id: item.key,
+            name: item.value['name'],
+            quantity: item.value['quantity'],
+            category: category,
+          ),
+        );
+      }
+      setState(() {
+        _groceryList = loadedItems;
+        _isLoading = false;
+      });
+    } catch (error) {
+      setState(() {
+        _error = 'Something went wrong! Please try again later.';
+      });
+    }
+  }
+
+  void _addNewItem() async {
     final newItem = await Navigator.of(context).push<GroceryItem>(
       MaterialPageRoute(builder: (context) {
         return const NewItem();
       }),
     );
-
     if (newItem == null) {
       return;
     }
@@ -28,10 +92,23 @@ class _GroceryListState extends State<GroceryList> {
     });
   }
 
-  void _removeItem(GroceryItem item) {
+  void _removeItem(GroceryItem item) async {
+    final index = _groceryList.indexOf(item);
     setState(() {
       _groceryList.remove(item);
     });
+
+    final url = Uri.https(
+      'shopping-app-83a23-default-rtdb.firebaseio.com',
+      'shopping-list/${item.id}.json',
+    );
+    final response = await http.delete(url);
+
+    if (response.statusCode >= 400) {
+      setState(() {
+        _groceryList.insert(index, item);
+      });
+    }
   }
 
   @override
@@ -41,11 +118,12 @@ class _GroceryListState extends State<GroceryList> {
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(30),
+            padding: const EdgeInsets.all(20),
             child: Image(
               color: const Color.fromARGB(255, 50, 58, 60).withOpacity(1.0),
               colorBlendMode: BlendMode.darken,
-              width: double.infinity,
+              width: 250,
+              height: 250,
               image: const AssetImage('assets/sad.jpeg'),
             ),
           ),
@@ -60,6 +138,9 @@ class _GroceryListState extends State<GroceryList> {
         ],
       ),
     );
+    if (_isLoading) {
+      content = const Center(child: CircularProgressIndicator());
+    }
     if (_groceryList.isNotEmpty) {
       content = ListView.builder(
           itemCount: _groceryList.length,
@@ -83,6 +164,11 @@ class _GroceryListState extends State<GroceryList> {
             );
           });
     }
+    if (_error != null) {
+      content = Center(
+        child: Text(_error!),
+      );
+    }
 
     return Scaffold(
         appBar: AppBar(
@@ -90,7 +176,7 @@ class _GroceryListState extends State<GroceryList> {
           centerTitle: false,
           actions: [
             IconButton(
-              onPressed: addNewItem,
+              onPressed: _addNewItem,
               icon: const Icon(Icons.add),
             ),
           ],
