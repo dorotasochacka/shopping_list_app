@@ -114,28 +114,10 @@ class _GroceryListState extends State<GroceryList> {
   @override
   Widget build(BuildContext context) {
     Widget content = Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Image(
-              color: const Color.fromARGB(255, 50, 58, 60).withOpacity(1.0),
-              colorBlendMode: BlendMode.darken,
-              width: 250,
-              height: 250,
-              image: const AssetImage('assets/sad.jpeg'),
-            ),
-          ),
-          const SizedBox(
-            height: 15,
-          ),
-          Text(
-            'You have no groceries!',
-            style: Theme.of(context).textTheme.displaySmall,
-            textAlign: TextAlign.center,
-          ),
-        ],
+      child: Text(
+        'You have no groceries!',
+        style: Theme.of(context).textTheme.displaySmall,
+        textAlign: TextAlign.center,
       ),
     );
     if (_isLoading) {
