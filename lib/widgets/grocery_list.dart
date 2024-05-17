@@ -1,10 +1,10 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-
+import 'package:dio/dio.dart';
 import 'package:shopping_list_app/data/categories.dart';
 import 'package:shopping_list_app/models/grocery_item.dart';
 import 'package:shopping_list_app/widgets/new_item.dart';
+
+final dio = Dio();
 
 class GroceryList extends StatefulWidget {
   const GroceryList({super.key});
@@ -25,33 +25,29 @@ class _GroceryListState extends State<GroceryList> {
   }
 
   void _loadItems() async {
-    final url = Uri.https(
-      'shopping-app-83a23-default-rtdb.firebaseio.com',
-      'shopping-list.json',
-    );
-
     try {
-      final response = await http.get(url);
-      response.statusCode;
+      final response = await dio.get(
+          'https://shopping-app-83a23-default-rtdb.firebaseio.com/shopping-list.json');
 
-      if (response.statusCode >= 400) {
+      final statusCode = response.statusCode;
+
+      if (statusCode! >= 400) {
         setState(() {
           _error = 'Failed to fetch data! Please try again later.';
         });
       }
 
-      if (response.body == 'null') {
+      if (response.data == null) {
         setState(() {
           _isLoading = false;
         });
 
         return;
       }
-
-      final Map<String, dynamic> listData = json.decode(response.body);
+      final Map<String, dynamic> groceryData = response.data;
       final List<GroceryItem> loadedItems = [];
 
-      for (final item in listData.entries) {
+      for (final item in groceryData.entries) {
         final category = categories.entries
             .firstWhere(
                 (element) => element.value.title == item.value['category'])
@@ -94,17 +90,16 @@ class _GroceryListState extends State<GroceryList> {
 
   void _removeItem(GroceryItem item) async {
     final index = _groceryList.indexOf(item);
+
     setState(() {
       _groceryList.remove(item);
     });
 
-    final url = Uri.https(
-      'shopping-app-83a23-default-rtdb.firebaseio.com',
-      'shopping-list/${item.id}.json',
-    );
-    final response = await http.delete(url);
+    final response = await dio.delete(
+        'https://shopping-app-83a23-default-rtdb.firebaseio.com/shopping-list/${item.id}.json');
 
-    if (response.statusCode >= 400) {
+    final statusCode = response.statusCode;
+    if (statusCode! >= 400) {
       setState(() {
         _groceryList.insert(index, item);
       });
