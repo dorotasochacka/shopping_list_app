@@ -1,17 +1,9 @@
 # shopping_list_app
 
-A new Flutter project.
+This is a simple Shopping List application built with Flutter as part of the course "Flutter & Dart - The Complete Guide [2024 Edition]."
 
-## Getting Started
+Features:
+- Form widget to efficiently gather user input 
+- Storing shopping list items in Firebase Realtime Database (using Dio package).
+- Adding and deleting items from database
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-# shopping_list_app
